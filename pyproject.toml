@@ -49,7 +49,6 @@ dev = [
 
 [project.scripts]
 mcp-threat-extraction = "mcp_threat_extraction.cli:main"
-mcp-threat-http-server = "run_http_server:main"
 
 [project.entry-points."mcp.servers"]
 threat-extraction = "mcp_threat_extraction.server:create_server"

@@ -8,22 +8,25 @@
 
 ## ローカル起動
 
-### 1. 直接起動
+### 1. uvicornで直接起動
 ```bash
 # 基本起動
-python run_http_server.py
+uvicorn mcp_threat_extraction.server:app
 
 # ホスト・ポート指定
-python run_http_server.py --host 0.0.0.0 --port 8080
+uvicorn mcp_threat_extraction.server:app --host 0.0.0.0 --port 8080
 
 # 開発モード（自動リロード）
-python run_http_server.py --reload
+uvicorn mcp_threat_extraction.server:app --reload
 ```
 
-### 2. パッケージ経由で起動（インストール後）
+### 2. 本番環境での起動
 ```bash
-pip install -e .
-mcp-threat-http-server --port 8080
+# ワーカー数指定
+uvicorn mcp_threat_extraction.server:app --host 0.0.0.0 --port 8000 --workers 4
+
+# アクセスログ有効
+uvicorn mcp_threat_extraction.server:app --host 0.0.0.0 --port 8000 --access-log
 ```
 
 ## Docker デプロイ
@@ -125,7 +128,10 @@ Content-Type: application/json
 
 ### APIテスト実行
 ```bash
-# サーバー起動後
+# サーバー起動
+uvicorn mcp_threat_extraction.server:app &
+
+# テスト実行
 python test_http_client.py
 
 # 別のURLでテスト

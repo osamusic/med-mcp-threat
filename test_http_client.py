@@ -1,6 +1,12 @@
 #!/usr/bin/env python3
 """
 HTTP APIクライアントのテストスクリプト
+
+Usage:
+    python test_http_client.py [base_url]
+    
+Example:
+    python test_http_client.py http://localhost:8000
 """
 
 import requests
