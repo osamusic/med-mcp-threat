@@ -8,21 +8,20 @@ RUN apt-get update && apt-get install -y \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Pythonの依存関係をコピーしてインストール
-COPY pyproject.toml uv.lock ./
-COPY requirements.txt ./
-
 # uvをインストール
 RUN pip install uv
 
+# Pythonの依存関係をコピーしてインストール
+COPY pyproject.toml uv.lock ./
+
 # 依存関係をインストール
-RUN uv pip install --system -r requirements.txt
+RUN uv sync --frozen --no-dev
 
 # アプリケーションコードをコピー
 COPY . .
 
 # アプリケーションをインストール
-RUN pip install -e .
+RUN uv pip install --system -e .
 
 # ポート8000を公開
 EXPOSE 8000
