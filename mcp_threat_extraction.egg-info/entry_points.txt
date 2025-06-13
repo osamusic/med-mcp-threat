@@ -1,5 +1,0 @@
-[console_scripts]
-mcp-threat-extraction = mcp_threat_extraction.cli:main
-
-[mcp.servers]
-threat-extraction = mcp_threat_extraction.server:create_server
