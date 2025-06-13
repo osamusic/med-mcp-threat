@@ -243,6 +243,90 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
     except Exception as e:
         return [TextContent(type="text", text=f"エラー: {str(e)}")]
 
+# HTTP サーバー用の追加インポート
+from fastapi import FastAPI, HTTPException
+from fastapi.responses import JSONResponse
+import uvicorn
+from pydantic import BaseModel
+from typing import Optional
+
+# HTTPサーバー用のPydanticモデル
+class ThreatRequest(BaseModel):
+    threat_description: str
+
+class BatchThreatRequest(BaseModel):
+    threat_descriptions: List[str]
+
+class DataTypesRequest(BaseModel):
+    text: str
+
+class NormalizeRequest(BaseModel):
+    attack_vector: Optional[str] = None
+    data_types: Optional[List[str]] = None
+    impact_types: Optional[List[str]] = None
+
+# FastAPIアプリケーション
+app = FastAPI(
+    title="MCP Threat Extraction Server",
+    description="医療機器の脅威記述文からCVSSスコアとセキュリティ特徴を抽出するHTTPサーバー",
+    version="0.3.0"
+)
+
+@app.get("/")
+async def root():
+    """ルートエンドポイント"""
+    return {"message": "MCP Threat Extraction Server", "version": "0.3.0"}
+
+@app.get("/tools")
+async def get_tools():
+    """利用可能なツールのリストを返す"""
+    tools = await list_tools()
+    return {"tools": [tool.model_dump() for tool in tools]}
+
+@app.post("/extract_cvss")
+async def extract_cvss_endpoint(request: ThreatRequest):
+    """単一の脅威記述文からCVSSスコアを抽出"""
+    try:
+        result = await call_tool("extract_cvss", {"threat_description": request.threat_description})
+        return JSONResponse(content=json.loads(result[0].text))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/extract_cvss_batch")
+async def extract_cvss_batch_endpoint(request: BatchThreatRequest):
+    """複数の脅威記述文からCVSSスコアをバッチ抽出"""
+    try:
+        result = await call_tool("extract_cvss_batch", {"threat_descriptions": request.threat_descriptions})
+        return JSONResponse(content=json.loads(result[0].text))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/extract_data_types")
+async def extract_data_types_endpoint(request: DataTypesRequest):
+    """テキストからデータタイプを抽出"""
+    try:
+        result = await call_tool("extract_data_types", {"text": request.text})
+        return JSONResponse(content=json.loads(result[0].text))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/normalize_features")
+async def normalize_features_endpoint(request: NormalizeRequest):
+    """セキュリティ特徴を正規化"""
+    try:
+        arguments = {}
+        if request.attack_vector:
+            arguments["attack_vector"] = request.attack_vector
+        if request.data_types:
+            arguments["data_types"] = request.data_types
+        if request.impact_types:
+            arguments["impact_types"] = request.impact_types
+        
+        result = await call_tool("normalize_features", arguments)
+        return JSONResponse(content=json.loads(result[0].text))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 # メイン実行
 async def main():
     """サーバーを起動する"""
@@ -254,6 +338,12 @@ async def main():
             write_stream,
             server.create_initialization_options()
         )
+
+async def run_http_server(host: str = "0.0.0.0", port: int = 8000):
+    """HTTPサーバーを起動する"""
+    config = uvicorn.Config(app, host=host, port=port, log_level="info")
+    server = uvicorn.Server(config)
+    await server.serve()
 
 def create_server():
     """Create and return the MCP server instance"""
