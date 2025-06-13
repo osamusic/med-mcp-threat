@@ -1,0 +1,7 @@
+include README.md
+include LICENSE
+include requirements.txt
+include pyproject.toml
+recursive-include mcp_threat_extraction *.py
+recursive-include mcp_threat_extraction *.json
+recursive-include mcp_threat_extraction *.md

@@ -1,0 +1,15 @@
+mcp>=0.1.0
+langchain-openai
+langchain-core
+python-dotenv
+tqdm
+sentence-transformers
+scikit-learn
+numpy
+torch
+
+[dev]
+pytest>=7.0
+pytest-asyncio
+black
+ruff

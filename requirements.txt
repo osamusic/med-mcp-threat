@@ -1,0 +1,8 @@
+# MCP SDK
+mcp>=0.1.0
+
+# 既存の依存関係（親プロジェクトと共有）
+langchain-openai
+langchain-core
+python-dotenv
+tqdm

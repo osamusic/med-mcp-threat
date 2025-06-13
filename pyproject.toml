@@ -1,0 +1,66 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mcp-threat-extraction"
+version = "0.3.0"
+description = "MCP server for medical device threat extraction and CVSS scoring"
+readme = "README.md"
+requires-python = ">=3.12"
+license = {text = "MIT"}
+authors = [
+    {name = "Threat Assessment Team", email = "threat-team@example.com"}
+]
+keywords = ["mcp", "medical", "threat", "cvss", "security"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Security",
+    "Topic :: Scientific/Engineering :: Medical Science Apps."
+]
+
+dependencies = [
+    "mcp>=0.1.0",
+    "langchain-openai",
+    "langchain-core",
+    "python-dotenv",
+    "tqdm",
+    "sentence-transformers",
+    "scikit-learn",
+    "numpy",
+    "torch"
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-asyncio",
+    "black",
+    "ruff"
+]
+
+[project.scripts]
+mcp-threat-extraction = "mcp_threat_extraction.cli:main"
+
+[project.entry-points."mcp.servers"]
+threat-extraction = "mcp_threat_extraction.server:create_server"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["mcp_threat_extraction*"]
+
+[tool.setuptools.package-data]
+mcp_threat_extraction = ["*.json", "*.md"]
+
+[tool.black]
+line-length = 100
+target-version = ["py312", "py313"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
