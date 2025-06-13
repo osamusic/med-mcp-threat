@@ -29,4 +29,4 @@ EXPOSE 8000
 # ヘルスチェック用にcurlをインストール済み
 
 # HTTPサーバーを起動
-CMD ["uvicorn", "mcp_threat_extraction.server:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uv", "run", "uvicorn", "mcp_threat_extraction.server:app", "--host", "0.0.0.0", "--port", "8000"]
