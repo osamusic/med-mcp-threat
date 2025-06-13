@@ -36,7 +36,9 @@ dependencies = [
     "torch",
     "fastapi",
     "uvicorn[standard]",
-    "pydantic"
+    "pydantic",
+    "firebase-admin",
+    "python-jose[cryptography]"
 ]
 
 [project.optional-dependencies]

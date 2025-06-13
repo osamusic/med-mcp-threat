@@ -244,11 +244,13 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
         return [TextContent(type="text", text=f"エラー: {str(e)}")]
 
 # HTTP サーバー用の追加インポート
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Depends
 from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 from pydantic import BaseModel
 from typing import Optional
+from .auth import initialize_firebase, require_auth, get_current_user
 
 # HTTPサーバー用のPydanticモデル
 class ThreatRequest(BaseModel):
@@ -265,11 +267,38 @@ class NormalizeRequest(BaseModel):
     data_types: Optional[List[str]] = None
     impact_types: Optional[List[str]] = None
 
+# Firebase初期化
+from contextlib import asynccontextmanager
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """アプリケーションのライフサイクル管理"""
+    # 起動時の処理
+    try:
+        initialize_firebase()
+    except Exception as e:
+        print(f"Firebase initialization warning: {e}")
+    
+    yield
+    
+    # 終了時の処理（必要に応じて）
+    pass
+
 # FastAPIアプリケーション
 app = FastAPI(
     title="MCP Threat Extraction Server",
     description="医療機器の脅威記述文からCVSSスコアとセキュリティ特徴を抽出するHTTPサーバー",
-    version="0.3.0"
+    version="0.3.0",
+    lifespan=lifespan
+)
+
+# CORS設定
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # 本番環境では適切なオリジンを設定
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 @app.get("/")
@@ -283,35 +312,57 @@ async def get_tools():
     tools = await list_tools()
     return {"tools": [tool.model_dump() for tool in tools]}
 
+# 認証関連のエンドポイント
+@app.get("/auth/me")
+async def get_current_user_info(current_user: dict = Depends(get_current_user)):
+    """現在のユーザー情報を取得"""
+    return {"user": current_user}
+
+@app.get("/auth/status")
+async def auth_status():
+    """認証設定の状態を確認"""
+    auth_disabled = os.getenv("DISABLE_AUTH", "false").lower() == "true"
+    return {
+        "auth_enabled": not auth_disabled,
+        "auth_method": "firebase" if not auth_disabled else "disabled"
+    }
+
+
 @app.post("/extract_cvss")
-async def extract_cvss_endpoint(request: ThreatRequest):
+async def extract_cvss_endpoint(request: ThreatRequest, current_user: dict = Depends(require_auth)):
     """単一の脅威記述文からCVSSスコアを抽出"""
     try:
         result = await call_tool("extract_cvss", {"threat_description": request.threat_description})
-        return JSONResponse(content=json.loads(result[0].text))
+        response_data = json.loads(result[0].text)
+        response_data["user"] = current_user["uid"]
+        return JSONResponse(content=response_data)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/extract_cvss_batch")
-async def extract_cvss_batch_endpoint(request: BatchThreatRequest):
+async def extract_cvss_batch_endpoint(request: BatchThreatRequest, current_user: dict = Depends(require_auth)):
     """複数の脅威記述文からCVSSスコアをバッチ抽出"""
     try:
         result = await call_tool("extract_cvss_batch", {"threat_descriptions": request.threat_descriptions})
-        return JSONResponse(content=json.loads(result[0].text))
+        response_data = json.loads(result[0].text)
+        response_data["user"] = current_user["uid"]
+        return JSONResponse(content=response_data)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/extract_data_types")
-async def extract_data_types_endpoint(request: DataTypesRequest):
+async def extract_data_types_endpoint(request: DataTypesRequest, current_user: dict = Depends(require_auth)):
     """テキストからデータタイプを抽出"""
     try:
         result = await call_tool("extract_data_types", {"text": request.text})
-        return JSONResponse(content=json.loads(result[0].text))
+        response_data = json.loads(result[0].text)
+        response_data["user"] = current_user["uid"]
+        return JSONResponse(content=response_data)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/normalize_features")
-async def normalize_features_endpoint(request: NormalizeRequest):
+async def normalize_features_endpoint(request: NormalizeRequest, current_user: dict = Depends(require_auth)):
     """セキュリティ特徴を正規化"""
     try:
         arguments = {}
@@ -323,7 +374,9 @@ async def normalize_features_endpoint(request: NormalizeRequest):
             arguments["impact_types"] = request.impact_types
         
         result = await call_tool("normalize_features", arguments)
-        return JSONResponse(content=json.loads(result[0].text))
+        response_data = json.loads(result[0].text)
+        response_data["user"] = current_user["uid"]
+        return JSONResponse(content=response_data)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

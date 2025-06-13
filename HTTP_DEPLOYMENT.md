@@ -149,15 +149,84 @@ curl -X POST http://localhost:8000/extract_cvss \
   -d '{"threat_description": "不正アクセスによるデータ漏洩"}'
 ```
 
+## Firebase認証の設定
+
+### 1. Firebaseプロジェクトの設定
+```bash
+# Firebase CLIのインストール
+npm install -g firebase-tools
+
+# Firebaseプロジェクトの作成
+firebase init
+
+# サービスアカウントキーの生成
+# Firebase Console > プロジェクト設定 > サービス アカウント > 新しい秘密鍵の生成
+```
+
+### 2. 環境変数の設定
+```bash
+# .envファイルを作成
+cp .env.example .env
+
+# Firebase設定（以下のいずれかの方法で設定）
+
+# 方法1: サービスアカウントキーファイルのパス
+FIREBASE_SERVICE_ACCOUNT_KEY=/path/to/firebase-service-account.json
+
+# 方法2: JSON文字列として設定
+FIREBASE_SERVICE_ACCOUNT_KEY='{"type":"service_account","project_id":"...","private_key_id":"..."}'
+
+# 方法3: 個別の環境変数として設定（CI/CDやクラウド環境推奨）
+FIREBASE_PROJECT_ID=your-project-id
+FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
+FIREBASE_CLIENT_EMAIL=firebase-adminsdk-xxxxx@your-project-id.iam.gserviceaccount.com
+FIREBASE_CLIENT_ID=1234567890
+```
+
+### 3. 認証が必要なエンドポイント
+- `POST /extract_cvss` - CVSS抽出
+- `POST /extract_cvss_batch` - バッチCVSS抽出  
+- `POST /extract_data_types` - データタイプ抽出
+- `POST /normalize_features` - 特徴正規化
+- `GET /auth/me` - ユーザー情報取得
+
+### 4. 認証が不要なエンドポイント
+- `GET /` - ヘルスチェック
+- `GET /tools` - ツール一覧
+- `GET /auth/status` - 認証状態確認
+
+### 5. 開発環境での認証無効化
+```bash
+# 開発時に認証を無効にする
+export DISABLE_AUTH=true
+uvicorn mcp_threat_extraction.server:app --reload
+```
+
+## API使用例（認証付き）
+
+### 1. Firebaseでユーザー認証を行い、IDトークンを取得
+
+### 2. APIリクエストにトークンを含める
+```bash
+# Authorization ヘッダーにBearerトークンを設定
+curl -X POST http://localhost:8000/extract_cvss \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_FIREBASE_ID_TOKEN" \
+  -d '{"threat_description": "脅威の説明"}'
+```
+
 ## プロダクション環境での注意点
 
 1. **環境変数の設定**
    - `OPENAI_API_KEY` または `ANTHROPIC_API_KEY` が必要
+   - `FIREBASE_SERVICE_ACCOUNT_KEY` が必要
    - `.env` ファイルまたは環境変数で設定
 
 2. **セキュリティ**
-   - APIキーを安全に管理
-   - 必要に応じてHTTPS/認証の追加を検討
+   - APIキーとFirebaseサービスアカウントキーを安全に管理
+   - CORS設定を本番環境に適した値に変更
+   - HTTPS通信を使用
+   - ユーザー管理はFirebase Consoleで直接実行
 
 3. **パフォーマンス**
    - セマンティック正規化器の初期化に時間がかかる場合があります
