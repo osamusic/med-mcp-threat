@@ -49,7 +49,7 @@ docker-compose down
 
 ### 2. Docker直接使用
 ```bash
-# ビルド
+# ビルド（CPU版）
 docker build -t mcp-threat-extraction .
 
 # 起動
@@ -60,6 +60,8 @@ docker run -d \
   --name mcp-threat-server \
   mcp-threat-extraction
 ```
+
+**注意**: DockerイメージはCPU専用版のPyTorchを使用してNVIDIA/CUDAの依存関係を排除しています（`pyproject.toml`の`[tool.uv]`設定により自動的にCPU版を選択）。
 
 ## API エンドポイント
 

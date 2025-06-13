@@ -82,7 +82,7 @@ python test_http_client.py --token YOUR_FIREBASE_ID_TOKEN
 
 ### Docker Deployment
 ```bash
-# Build and run with Docker Compose
+# Build and run with Docker Compose (uses CPU-only PyTorch)
 docker-compose up -d
 
 # View logs
@@ -91,6 +91,8 @@ docker-compose logs -f
 # Stop
 docker-compose down
 ```
+
+**Note**: Docker builds use CPU-only PyTorch via uv's `extra-index-url` configuration in `pyproject.toml` to avoid NVIDIA/CUDA dependencies.
 
 ## Environment Variables
 

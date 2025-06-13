@@ -14,14 +14,14 @@ RUN pip install uv
 # Pythonの依存関係をコピーしてインストール
 COPY pyproject.toml uv.lock ./
 
-# 依存関係をインストール
+# CPU版の依存関係をインストール（CUDA依存を回避）
 RUN uv sync --frozen --no-dev
 
 # アプリケーションコードをコピー
 COPY . .
 
 # アプリケーションをインストール
-RUN uv pip install --system -e .
+RUN uv pip install --system --no-deps -e .
 
 # ポート8000を公開
 EXPOSE 8000

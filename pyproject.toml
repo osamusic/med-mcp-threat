@@ -69,3 +69,8 @@ target-version = ["py312", "py313"]
 [tool.ruff]
 line-length = 100
 target-version = "py312"
+
+[tool.uv]
+# PyTorchのCPU版を使用するためのインデックス設定
+index-url = "https://pypi.org/simple/"
+extra-index-url = ["https://download.pytorch.org/whl/cpu"]
