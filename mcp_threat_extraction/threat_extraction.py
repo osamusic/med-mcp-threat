@@ -152,7 +152,7 @@ def determine_cvss_from_features(features: dict, threat_description: str) -> CVS
 
 load_dotenv()
 # 環境変数 OPENAI_API_KEY を使う
-llm = ChatOpenAI(model=os.getenv("OPENAI_MODEL"), temperature=0)
+llm = ChatOpenAI(model=os.getenv("OPENAI_MODEL", "gpt-4o-mini"), temperature=0)
 semantic_normalizer_lambda = RunnableLambda(normalize_features_with_semantic)
 parser = JsonOutputParser()
 
