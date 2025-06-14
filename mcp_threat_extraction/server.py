@@ -333,6 +333,7 @@ app.add_middleware(
 )
 
 @app.get("/")
+@app.head("/")
 async def root():
     """ルートエンドポイント"""
     return {"message": "MCP Threat Extraction Server", "version": "0.3.0"}
