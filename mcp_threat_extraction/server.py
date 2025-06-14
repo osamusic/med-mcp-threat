@@ -15,12 +15,16 @@ from mcp.server import Server
 from mcp.types import Tool, TextContent
 from .threat_extraction import calculate_cvss_with_ai, process_threats_with_cvss
 from dotenv import load_dotenv
+from .logging_config import get_logger
 
 # セマンティック正規化器のインポート
 from .semantic_normalizer_optimized import OptimizedSemanticNormalizer
 
 # 環境変数を読み込む
 load_dotenv()
+
+# Logger設定
+logger = get_logger(__name__)
 
 # MCPサーバーのインスタンスを作成
 server = Server("threat-extraction")
@@ -37,7 +41,7 @@ def get_semantic_normalizer():
             start_time = time.time()
             semantic_normalizer = OptimizedSemanticNormalizer()
             init_time = time.time() - start_time
-            print(f"Semantic normalizer initialized in {init_time:.2f} seconds")
+            logger.info(f"Semantic normalizer initialized in {init_time:.2f} seconds")
         except ImportError as e:
             raise Exception(f"Missing required dependency: {str(e)}. Please install sentence-transformers: pip install sentence-transformers")
         except Exception as e:
@@ -277,7 +281,7 @@ async def lifespan(app: FastAPI):
     try:
         initialize_firebase()
     except Exception as e:
-        print(f"Firebase initialization warning: {e}")
+        logger.warning(f"Firebase initialization warning: {e}")
     
     yield
     
@@ -293,7 +297,33 @@ app = FastAPI(
 )
 
 # CORS設定
-allowed_origins = os.getenv("ALLOWED_ORIGINS", "*").split(",")
+# デフォルトのローカル開発用オリジン
+default_origins = [
+    "http://localhost:3000",
+    "http://localhost:3001",
+    "http://localhost:5173",
+    "http://localhost:8080",
+    "http://127.0.0.1:3000",
+    "http://127.0.0.1:3001",
+    "http://127.0.0.1:5173",
+    "http://127.0.0.1:8080",
+]
+
+# 環境変数から追加のオリジンを取得
+env_origins = os.getenv("ALLOWED_ORIGINS", "")
+if env_origins == "*":
+    # ワイルドカードが指定された場合はそのまま使用
+    allowed_origins = ["*"]
+else:
+    # 環境変数のオリジンをパース
+    additional_origins = [origin.strip() for origin in env_origins.split(",") if origin.strip()]
+    # デフォルトと環境変数のオリジンを結合
+    allowed_origins = default_origins + additional_origins
+    # 重複を削除
+    allowed_origins = list(dict.fromkeys(allowed_origins))
+
+logger.info(f"CORS allowed origins: {allowed_origins}")
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=allowed_origins,

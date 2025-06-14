@@ -9,6 +9,7 @@ from dotenv import load_dotenv
 from tqdm import tqdm
 from typing import Dict, Tuple
 from dataclasses import dataclass
+from .logging_config import get_logger
 from .threat_data import (
     DEVICE_TYPES, THREAT_TEMPLATES, COUNTERMEASURES_DB,
     ASSET_CLASSIFICATION, DATA_CLASSIFICATION, CVSS_ATTACK_PATTERNS,
@@ -21,6 +22,9 @@ from .cvss_logic import CVSSMetrics, CVSSCalculator, CVSSLogicEngine
 from .semantic_normalizer_optimized import OptimizedSemanticNormalizer
 
 # 最適化されたSemanticNormalizerのインスタンス（レイジーローディング）
+# Logger設定
+logger = get_logger(__name__)
+
 semantic_normalizer = None
 
 def get_semantic_normalizer():
@@ -247,7 +251,7 @@ def process_threats_with_cvss(threat_descriptions: list) -> list:
     """脅威リストを処理してCVSSスコアを含む結果を返す"""
     results = []
     
-    print("🧪 CVSS計算付きバッチ処理を開始します...\n")
+    logger.info("CVSS計算付きバッチ処理を開始します...")
     
     for threat in tqdm(threat_descriptions):
         try:
@@ -295,10 +299,10 @@ if __name__ == "__main__":
     with open("cvss_extraction_results.json", "w", encoding="utf-8") as f:
         json.dump(cvss_results, f, indent=2, ensure_ascii=False)
     
-    print("\n✅ 完了しました。出力: cvss_extraction_results.json")
+    logger.info("完了しました。出力: cvss_extraction_results.json")
     
     # 統計情報を表示
-    print("\n📊 CVSS統計:")
+    logger.info("CVSS統計:")
     severities = {}
     for result in cvss_results:
         if "cvss_metrics" in result:
@@ -306,4 +310,4 @@ if __name__ == "__main__":
             severities[severity] = severities.get(severity, 0) + 1
     
     for severity, count in sorted(severities.items()):
-        print(f"  {severity}: {count}件")
+        logger.info(f"  {severity}: {count}件")

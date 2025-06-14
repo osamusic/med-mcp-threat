@@ -10,8 +10,12 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import firebase_admin
 from firebase_admin import credentials, auth
 from dotenv import load_dotenv
+from .logging_config import get_logger
 
 load_dotenv()
+
+# Logger設定
+logger = get_logger(__name__)
 
 # Firebase Admin SDK の初期化
 _firebase_app = None
@@ -32,12 +36,12 @@ def initialize_firebase():
                 # JSON文字列の場合
                 service_account_info = json.loads(firebase_config)
                 cred = credentials.Certificate(service_account_info)
-                print("Firebase initialized with JSON credentials from environment variable")
+                logger.info("Firebase initialized with JSON credentials from environment variable")
             else:
                 # ファイルパスの場合
                 if os.path.exists(firebase_config):
                     cred = credentials.Certificate(firebase_config)
-                    print(f"Firebase initialized with credentials file: {firebase_config}")
+                    logger.info(f"Firebase initialized with credentials file: {firebase_config}")
                 else:
                     raise FileNotFoundError(f"Firebase service account file not found: {firebase_config}")
         else:
@@ -60,21 +64,21 @@ def initialize_firebase():
                     "client_x509_cert_url": f"https://www.googleapis.com/robot/v1/metadata/x509/{client_email}"
                 }
                 cred = credentials.Certificate(service_account_info)
-                print("Firebase initialized with individual environment variables")
+                logger.info("Firebase initialized with individual environment variables")
             else:
                 # デフォルトの認証情報を使用（Google Cloud環境など）
                 cred = credentials.ApplicationDefault()
-                print("Firebase initialized with application default credentials")
+                logger.info("Firebase initialized with application default credentials")
         
         _firebase_app = firebase_admin.initialize_app(cred)
-        print("Firebase Admin SDK initialized successfully")
+        logger.info("Firebase Admin SDK initialized successfully")
         return _firebase_app
         
     except Exception as e:
-        print(f"Firebase initialization failed: {e}")
+        logger.error(f"Firebase initialization failed: {e}")
         # 開発環境では認証を無効化する場合
         if os.getenv("DISABLE_AUTH", "false").lower() == "true":
-            print("Authentication disabled for development")
+            logger.warning("Authentication disabled for development")
             return None
         raise
 
@@ -116,7 +120,7 @@ async def verify_firebase_token(credentials: Optional[HTTPAuthorizationCredentia
             headers={"WWW-Authenticate": "Bearer"},
         )
     except Exception as e:
-        print(f"Token verification error: {e}")
+        logger.error(f"Token verification error: {e}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="認証に失敗しました",
