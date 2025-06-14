@@ -38,7 +38,8 @@ dependencies = [
     "uvicorn[standard]",
     "pydantic",
     "firebase-admin",
-    "python-jose[cryptography]"
+    "python-jose[cryptography]",
+    "psutil"
 ]
 
 [project.optional-dependencies]

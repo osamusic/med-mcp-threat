@@ -38,12 +38,35 @@ def get_semantic_normalizer():
     if semantic_normalizer is None:
         try:
             import time
+            import psutil
+            import os
+            
+            # メモリ使用量を記録
+            process = psutil.Process(os.getpid())
+            memory_before = process.memory_info().rss / 1024 / 1024  # MB
+            
             start_time = time.time()
             semantic_normalizer = OptimizedSemanticNormalizer()
             init_time = time.time() - start_time
+            
+            # 初期化後のメモリ使用量
+            memory_after = process.memory_info().rss / 1024 / 1024  # MB
+            memory_used = memory_after - memory_before
+            
             logger.info(f"Semantic normalizer initialized in {init_time:.2f} seconds")
+            logger.info(f"Memory usage: {memory_before:.1f}MB -> {memory_after:.1f}MB (delta: {memory_used:.1f}MB)")
         except ImportError as e:
-            raise Exception(f"Missing required dependency: {str(e)}. Please install sentence-transformers: pip install sentence-transformers")
+            if "psutil" in str(e):
+                # psutilがない場合は通常の初期化
+                start_time = time.time()
+                semantic_normalizer = OptimizedSemanticNormalizer()
+                init_time = time.time() - start_time
+                logger.info(f"Semantic normalizer initialized in {init_time:.2f} seconds")
+            else:
+                raise Exception(f"Missing required dependency: {str(e)}. Please install sentence-transformers: pip install sentence-transformers")
+        except MemoryError:
+            logger.error("Memory error during semantic normalizer initialization")
+            raise Exception("Insufficient memory to initialize semantic normalizer. Consider using USE_SMALL_MODEL=true environment variable.")
         except Exception as e:
             raise Exception(f"Failed to initialize normalizer: {str(e)}")
     return semantic_normalizer

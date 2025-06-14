@@ -108,6 +108,7 @@ Choose one configuration method:
 ### Optional
 - `DISABLE_AUTH=true`: Disable authentication for development
 - `ALLOWED_ORIGINS=*`: CORS configuration
+- `USE_SMALL_MODEL=true`: Use smaller SentenceTransformer model for memory-constrained environments (e.g., Render free tier)
 
 ## Key Architectural Decisions
 

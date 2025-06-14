@@ -13,6 +13,10 @@ class OptimizedSemanticNormalizer:
         Args:
             model_name: 使用するSentenceTransformerモデル名
         """
+        # メモリ効率のため、より小さいモデルを使用するオプション
+        if os.getenv("USE_SMALL_MODEL", "false").lower() == "true":
+            model_name = "paraphrase-MiniLM-L3-v2"  # より軽量なモデル
+        
         self.model = SentenceTransformer(model_name)
         self.embeddings_cache = {}
         self._initialize_optimized_embeddings()
